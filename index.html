@@ -105,6 +105,8 @@ dialog input[type=text],dialog input[type=number],dialog textarea,dialog select{
     <div class="sp"></div>
     <button class="btn" id="bAnn">📢 Announce</button>
     <button class="btn" id="bParty">🎉 Start a party</button>
+    <button class="btn gold" id="bGive">₦ Give money</button>
+    <button class="btn" id="bConcert">🎤 Concert</button>
     <button class="btn red" id="bRaid">🚨 Send bandits</button>
     <button class="btn sm" id="bTheme" title="Switch light / dark">Theme</button>
   </header>
@@ -113,7 +115,7 @@ dialog input[type=text],dialog input[type=number],dialog textarea,dialog select{
     <div class="grid">
       <div style="display:grid;gap:14px;min-width:0">
         <div class="card"><h2>Players</h2>
-          <div class="toolbar"><input id="q" placeholder="Search name or matric (VUG/26/…)"><select id="sort"><option value="recent">Last seen</option><option value="new">Newest</option><option value="money">Richest</option><option value="level">Level</option><option value="discipline">Discipline</option></select></div>
+          <div class="toolbar"><input id="q" placeholder="Search name, @username or matric (VUG/26/…)"><select id="sort"><option value="recent">Last seen</option><option value="new">Newest</option><option value="money">Richest</option><option value="level">Level</option><option value="discipline">Discipline</option></select></div>
           <div class="tblwrap"><table class="tbl"><thead><tr><th>Student</th><th>Status</th><th>Level</th><th class="num">Money</th><th class="num">Discipline</th><th class="num">CGPA</th><th class="num">Day</th><th>Last seen</th></tr></thead><tbody id="ut"></tbody></table></div>
         </div>
         <div class="card"><h2>Students by level</h2><div id="lvchart"></div></div>
@@ -140,8 +142,24 @@ dialog input[type=text],dialog input[type=number],dialog textarea,dialog select{
 <dialog id="dParty"><h3>🎉 Start an off-campus party</h3><div class="note">Everybody online gets the notification. To go, they must sign out with an exeat, bribe Officer Tiger or use the fence.</div>
   <label>Host name</label><input type="text" id="pHost" value="Big Dayo (400L)" maxlength="30"><label>Where</label><select id="pLoc"><option value="lodge2">Royal Villa Hostel</option><option value="lodge1">Peace Lodge</option><option value="lodge3">Graceland Annex</option></select>
   <div class="row"><button class="btn gold" id="pGo">Start party</button><button class="btn" onclick="this.closest('dialog').close()">Cancel</button></div></dialog>
-<dialog id="dMoney"><h3>Give or take money</h3><label>Amount (negative to take)</label><input type="number" id="mAmt" value="50000" step="1000">
-  <div class="row"><button class="btn gold" id="mGo">Apply</button><button class="btn" onclick="this.closest('dialog').close()">Cancel</button></div></dialog>
+<dialog id="dMoney"><h3>₦ Give or take game money</h3>
+  <label>Who gets it</label><select id="mTarget"><option value="user">This player</option><option value="who">One player by matric number or username</option><option value="first">The first players who signed up</option><option value="online">Everyone online now</option><option value="all">Every player</option></select>
+  <div id="mWhoF"><label>Matric number or username</label><input type="text" id="mWho" placeholder="VUG/26/1001 or @username" maxlength="40"></div>
+  <div id="mFirstF"><label>How many (first N players)</label><input type="number" id="mN" value="200" min="1" step="1"></div>
+  <label>Amount (negative to take)</label><input type="number" id="mAmt" value="1000000000" step="1000">
+  <div class="note" id="mHint"></div>
+  <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-amt="1000000">₦1M</button><button class="btn sm" data-amt="100000000">₦100M</button><button class="btn sm" data-amt="1000000000">₦1B</button><button class="btn sm" data-amt="10000000000">₦10B</button></div>
+  <label>Note players see (optional)</label><input type="text" id="mNote" maxlength="60" placeholder="Gift from the game admin">
+  <div class="row"><button class="btn gold" id="mGo">Send</button><button class="btn" onclick="this.closest('dialog').close()">Cancel</button></div></dialog>
+<dialog id="dConcert"><h3>🎤 Host a concert</h3><div class="note">Everyone online gets the news, posters go up on campus and the concert ground outside school opens on the day. Players buy tickets with game money.</div>
+  <div class="note" id="cNow"></div>
+  <label>Concert name</label><input type="text" id="cTitle" maxlength="40" value="Afrobeats Night Live">
+  <label>Artists (one per box)</label><input type="text" id="cA1" maxlength="30" value="Kezzy B"><input type="text" id="cA2" maxlength="30" value="Starlight Wizz" style="margin-top:6px"><input type="text" id="cA3" maxlength="30" value="Afro Giant" style="margin-top:6px">
+  <div class="note">These are made-up names. If you type real artists, make sure you have their permission to use their names.</div>
+  <label>When</label><div class="row"><select id="cDays"><option value="0">Today (game day)</option><option value="1">Tomorrow</option><option value="2">In 2 days</option><option value="3" selected>In 3 days</option><option value="7">In a week</option></select><select id="cHour"><option value="18">6 PM</option><option value="19">7 PM</option><option value="20" selected>8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option></select></div>
+  <label>Ticket price (₦)</label><div class="row"><input type="number" id="cPrice" value="5000" step="500"><input type="number" id="cVip" value="25000" step="1000" title="VIP"></div>
+  <div class="note">First box: regular ticket. Second box: VIP (front of the stage).</div>
+  <div class="row"><button class="btn gold" id="cGo">Announce concert</button><button class="btn red" id="cCancel">Cancel concert</button><button class="btn" onclick="this.closest('dialog').close()">Close</button></div></dialog>
 <div class="drawer" id="drawer" hidden></div>
 <div class="tip" id="tip" hidden></div>
 
@@ -171,7 +189,7 @@ async function loadStats(){const s=await api('/api/admin/stats');
 document.addEventListener('mousemove',e=>{const b=e.target.closest&&e.target.closest('[data-tip]');const tp=$('#tip');if(!b){tp.hidden=true;return;}tp.hidden=false;tp.textContent=b.dataset.tip;tp.style.left=(e.clientX+12)+'px';tp.style.top=(e.clientY-30)+'px';});
 document.addEventListener('click',e=>{const u=e.target.closest&&e.target.closest('[data-u]');if(u)openUser(+u.dataset.u);});
 async function loadUsers(){const j=await api('/api/admin/users?q='+encodeURIComponent($('#q').value)+'&sort='+$('#sort').value);USERS=j.users;
-  $('#ut').innerHTML=USERS.map(u=>'<tr data-u="'+u.id+'" style="cursor:pointer"><td><div class="who">'+esc(u.name||'(no character yet)')+'</div><div class="mat">'+esc(u.matric)+(u.adult?'':' · under 18')+'</div></td><td>'+(u.banned?'<span class="pill ban">banned</span> ':'')+(u.online?'<span class="pill on">online</span> ':'')+(u.status==='kidnapped'?'<span class="pill kid">kidnapped</span>':u.status==='graduated'?'<span class="pill">graduated</span>':'')+'</td><td>'+u.level+'L</td><td class="num">'+naira(u.money)+'</td><td class="num">'+u.discipline+'</td><td class="num">'+(u.cgpa?u.cgpa.toFixed(2):'–')+'</td><td class="num">'+u.day+'</td><td>'+ago(u.last_seen)+'</td></tr>').join('')||'<tr><td colspan="8" class="note">No players yet. Share the game link.</td></tr>';
+  $('#ut').innerHTML=USERS.map(u=>'<tr data-u="'+u.id+'" style="cursor:pointer"><td><div class="who">'+esc(u.name||'(no character yet)')+'</div><div class="mat">'+esc(u.matric)+(u.username?' · @'+esc(u.username):'')+(u.adult?'':' · under 18')+'</div></td><td>'+(u.banned?'<span class="pill ban">banned</span> ':'')+(u.online?'<span class="pill on">online</span> ':'')+(u.status==='kidnapped'?'<span class="pill kid">kidnapped</span>':u.status==='graduated'?'<span class="pill">graduated</span>':'')+'</td><td>'+u.level+'L</td><td class="num">'+naira(u.money)+'</td><td class="num">'+u.discipline+'</td><td class="num">'+(u.cgpa?u.cgpa.toFixed(2):'–')+'</td><td class="num">'+u.day+'</td><td>'+ago(u.last_seen)+'</td></tr>').join('')||'<tr><td colspan="8" class="note">No players yet. Share the game link.</td></tr>';
   fillTargets();}
 let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(loadUsers,250);};$('#sort').onchange=loadUsers;
 const HOT=['raid','kidnapped','ended','ban','caught_night','scandal','beaten'],MONEY=['purchase','transfer','admin_money'];
@@ -182,7 +200,7 @@ function evText(e){const d=e.data||{},n='<b>'+esc(e.name||'Someone')+'</b>';swit
   case 'purchase':return n+' topped up '+naira(d.coins)+' ('+naira(d.ng)+' '+d.mode+')';case 'transfer':return n+' sent '+naira(d.amount)+' to '+esc(d.to);case 'theft':return n+(d.caught?' was caught pickpocketing ':' pickpocketed ')+esc(d.victim)+(d.amount?' ('+naira(d.amount)+')':'');
   case 'boys':return n+' called the boys on '+esc(d.target);case 'party':return n+' started a party at '+esc(d.loc)+' (host '+esc(d.host)+')';case 'group':return n+' created group "'+esc(d.name)+'"';case 'room_visit':return n+' is visiting '+esc(d.host)+'\'s room';
   case 'caught_night':return n+' was caught with someone at night';case 'scandal':return n+' is in a campus scandal';case 'semester':return n+(d.pass?' was promoted to '+d.level+'L':' is repeating '+d.level+'L');case 'beaten':return n+' was flogged by '+esc(d.by);
-  case 'announce':return 'Announcement sent to '+d.to+': "'+esc(d.text)+'"';case 'admin_money':return 'Admin '+(d.amount>0?'gave ':'took ')+naira(Math.abs(d.amount))+' '+(d.amount>0?'to ':'from ')+n;case 'admin_reset':return 'Admin reset '+n;case 'ban':return n+' was banned';case 'unban':return n+' was unbanned';
+  case 'announce':return 'Announcement sent to '+d.to+': "'+esc(d.text)+'"';case 'admin_money_bulk':return 'Admin '+(d.amount>0?'gave ':'took ')+naira(Math.abs(d.amount))+' '+(d.amount>0?'to each of ':'from each of ')+d.to+' player(s)';case 'concert':return '🎤 Concert announced: '+esc(d.title)+' ('+esc(d.lineup)+')';case 'concert_cancel':return 'Concert cancelled';case 'admin_money':return 'Admin '+(d.amount>0?'gave ':'took ')+naira(Math.abs(d.amount))+' '+(d.amount>0?'to ':'from ')+n;case 'admin_reset':return 'Admin reset '+n;case 'ban':return n+' was banned';case 'unban':return n+' was unbanned';
   default:return n+' · '+esc(e.type);}}
 function evRow(e){return '<div class="ev'+(HOT.includes(e.type)?' hot':MONEY.includes(e.type)?' money':'')+'"><time>'+new Date(e.created).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</time><div class="t">'+evText(e)+'</div></div>';}
 async function loadFeed(){const j=await api('/api/admin/events');$('#feed').innerHTML=j.events.map(evRow).join('')||'<div class="note">Nothing yet.</div>';j.events.forEach(e=>{if(e.id>lastEv)lastEv=e.id;});}
@@ -208,7 +226,7 @@ $('#bParty').onclick=()=>$('#dParty').showModal();
 $('#pGo').onclick=async()=>{try{await api('/api/admin/party',{host:$('#pHost').value,loc:$('#pLoc').value});$('#dParty').close();toast('Party announced to everyone online.');}catch(e){toast(e.message);}};
 let curUser=null;
 async function openUser(id){const j=await api('/api/admin/user?id='+id);curUser=j.user;const u=j.user,g=j.game,d=$('#drawer');
-  d.innerHTML='<div style="display:flex;gap:10px;align-items:center"><div style="flex:1"><h3>'+esc(u.name)+'</h3><div class="mat">'+esc(u.matric)+' · '+(u.adult?'18+':'under 18')+' · '+(u.online?'<span class="pill on">online</span>':'last seen '+ago(u.last_seen))+(u.banned?' <span class="pill ban">banned</span>':'')+'</div></div><button class="btn sm" id="dX">Close</button></div>'+
+  d.innerHTML='<div style="display:flex;gap:10px;align-items:center"><div style="flex:1"><h3>'+esc(u.name)+'</h3><div class="mat">'+esc(u.matric)+(u.username?' · @'+esc(u.username):'')+' · '+(u.adult?'18+':'under 18')+' · '+(u.online?'<span class="pill on">online</span>':'last seen '+ago(u.last_seen))+(u.banned?' <span class="pill ban">banned</span>':'')+'</div></div><button class="btn sm" id="dX">Close</button></div>'+
   '<div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><button class="btn sm red" id="uRaid">🚨 Send bandits to this player</button><button class="btn sm" id="uMoney">₦ Give / take money</button><button class="btn sm" id="uMsg">📢 Message</button><button class="btn sm" id="uReset">Reset to Day 1</button><button class="btn sm" id="uBan">'+(u.banned?'Unban':'Ban')+'</button></div>'+
   '<div class="sec">Game</div><div class="mini"><div><span>Level</span><b>'+u.level+'L</b></div><div><span>Day</span><b>'+u.day+'</b></div><div><span>Money</span><b>'+naira(u.money)+'</b></div><div><span>Discipline</span><b>'+u.discipline+'</b></div><div><span>CGPA</span><b>'+(u.cgpa?u.cgpa.toFixed(2):'–')+'</b></div><div><span>Restarts</span><b>'+u.restarts+'</b></div><div><span>Dept</span><b>'+esc(g.dept||'–')+'</b></div><div><span>Suspicion</span><b>'+(g.suspicion||0)+'</b></div><div><span>Fines owed</span><b>'+naira(g.fineDebt)+'</b></div></div>'+
   (g.captive?'<div class="sec">Held by bandits</div><div class="note">Ransom '+naira(g.captive.R)+' · raised '+naira(g.captive.raised)+' · '+g.captive.days+' day(s) left</div>':'')+
@@ -220,11 +238,25 @@ async function openUser(id){const j=await api('/api/admin/user?id='+id);curUser=
   '<div class="sec">Activity</div><div class="list">'+j.events.map(e=>'<div><span>'+evText(Object.assign({name:u.name},e))+'</span><span class="mat">'+ago(e.created)+'</span></div>').join('')+'</div>';
   d.hidden=false;$('#dX').onclick=()=>d.hidden=true;
   $('#uRaid').onclick=async()=>{if(!confirm('Send bandits after '+u.name+'? They will be kidnapped.'))return;await api('/api/admin/raid',{target:u.id});toast('Bandits sent after '+u.name+'.');};
-  $('#uMoney').onclick=()=>{$('#dMoney').showModal();};
+  $('#uMoney').onclick=()=>{$('#mTarget').value='user';mForm();$('#dMoney').showModal();};
   $('#uMsg').onclick=()=>{fillTargets();$('#aTarget').value=String(u.id);$('#dAnn').showModal();};
   $('#uReset').onclick=async()=>{if(!confirm('Reset '+u.name+' to Day 1?'))return;await api('/api/admin/reset',{userId:u.id});toast('Reset sent.');};
   $('#uBan').onclick=async()=>{await api('/api/admin/ban',{userId:u.id,banned:!u.banned});toast(u.banned?'Unbanned':'Banned');openUser(u.id);loadUsers();};}
-$('#mGo').onclick=async()=>{if(!curUser)return;await api('/api/admin/money',{userId:curUser.id,amount:+$('#mAmt').value});$('#dMoney').close();toast('Done.');};
+function mForm(){const t=$('#mTarget').value;$('#mWhoF').hidden=t!=='who';$('#mFirstF').hidden=t!=='first';$('#mTarget').querySelector('[value=user]').disabled=!curUser;
+  if(t==='user'&&!curUser){$('#mTarget').value='who';return mForm();}
+  const a=+$('#mAmt').value||0;$('#mHint').textContent=(a<0?'Takes ':'Gives ')+naira(Math.abs(a))+' '+(t==='user'&&curUser?'to '+curUser.name:t==='who'?'to that player':t==='first'?'to each of the first '+(+$('#mN').value||0)+' players':t==='online'?'to each player online ('+ONLINE.length+')':'to every player')+'. Offline players get it the next time they open the game.';}
+['#mTarget','#mAmt','#mN'].forEach(s=>{$(s).oninput=mForm;$(s).onchange=mForm;});
+document.querySelectorAll('#dMoney [data-amt]').forEach(b=>b.onclick=()=>{$('#mAmt').value=b.dataset.amt;mForm();});
+$('#bGive').onclick=()=>{curUser=null;$('#mTarget').value='first';mForm();$('#dMoney').showModal();};
+$('#mGo').onclick=async()=>{const t=$('#mTarget').value;const body={amount:+$('#mAmt').value,note:$('#mNote').value};
+  if(t==='user'){if(!curUser)return;body.userId=curUser.id;}else if(t==='who')body.who=$('#mWho').value.trim();else{body.target=t;if(t==='first')body.n=+$('#mN').value;}
+  if(t!=='user'&&t!=='who'&&!confirm(($('#mHint').textContent)+' Continue?'))return;
+  try{const j=await api('/api/admin/money',body);$('#dMoney').close();toast('Done: sent to '+j.to+' player(s).');}catch(e){toast(e.message);}};
+async function cLoad(){try{const j=await api('/api/admin/concert');const c=j.concert;$('#cNow').textContent=c?'Now announced: '+c.title+' · '+c.lineup.join(', ')+' · tickets '+naira(c.price):'No concert announced right now.';}catch(e){}}
+$('#bConcert').onclick=()=>{cLoad();$('#dConcert').showModal();};
+$('#cGo').onclick=async()=>{const lineup=['#cA1','#cA2','#cA3'].map(s=>$(s).value.trim()).filter(Boolean);
+  try{const j=await api('/api/admin/concert',{title:$('#cTitle').value,lineup,inDays:+$('#cDays').value,hour:+$('#cHour').value,price:+$('#cPrice').value,vip:+$('#cVip').value});$('#dConcert').close();toast('Concert announced to '+j.to+' player(s) online. Others see it when they log in.');}catch(e){toast(e.message);}};
+$('#cCancel').onclick=async()=>{if(!confirm('Cancel the concert?'))return;try{await api('/api/admin/concert',{cancel:true});$('#dConcert').close();toast('Concert cancelled.');}catch(e){toast(e.message);}};
 })();
 </script>
 </body>
