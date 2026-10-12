@@ -107,6 +107,7 @@ dialog input[type=text],dialog input[type=number],dialog textarea,dialog select{
     <button class="btn" id="bParty">🎉 Start a party</button>
     <button class="btn gold" id="bGive">₦ Give money</button>
     <button class="btn" id="bConcert">🎤 Concert</button>
+    <button class="btn sm" id="bImport" title="Only once, after moving the game to Cloudflare">☁ Move data from Upstash</button>
     <button class="btn red" id="bRaid">🚨 Send bandits</button>
     <button class="btn sm" id="bTheme" title="Switch light / dark">Theme</button>
   </header>
@@ -256,6 +257,7 @@ async function cLoad(){try{const j=await api('/api/admin/concert');const c=j.con
 $('#bConcert').onclick=()=>{cLoad();$('#dConcert').showModal();};
 $('#cGo').onclick=async()=>{const lineup=['#cA1','#cA2','#cA3'].map(s=>$(s).value.trim()).filter(Boolean);
   try{const j=await api('/api/admin/concert',{title:$('#cTitle').value,lineup,inDays:+$('#cDays').value,hour:+$('#cHour').value,price:+$('#cPrice').value,vip:+$('#cVip').value});$('#dConcert').close();toast('Concert announced to '+j.to+' player(s) online. Others see it when they log in.');}catch(e){toast(e.message);}};
+$('#bImport').onclick=async()=>{if(!confirm('Copy every player, save and message from Upstash into the Cloudflare game server? Do this once, right after moving to Cloudflare.'))return;toast('Copying… this can take a minute.');try{const j=await api('/api/admin/import',{});toast('Done: copied '+j.copied+' of '+j.found+' records from Upstash.');loadStats();loadUsers();}catch(e){toast(e.message);}};
 $('#cCancel').onclick=async()=>{if(!confirm('Cancel the concert?'))return;try{await api('/api/admin/concert',{cancel:true});$('#dConcert').close();toast('Concert cancelled.');}catch(e){toast(e.message);}};
 })();
 </script>
